@@ -35,7 +35,7 @@ def get_models() -> list:
     return ["uni", "resnet", "vit"]
 
 def get_datasets() -> list:
-    return ["oxford_pet", "breakhis"]
+    return ["breakhis"]
 
 def get_grid_params() -> dict:
     grid_param = dict()
