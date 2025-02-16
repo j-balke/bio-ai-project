@@ -5,4 +5,5 @@
 
 # how to use:
 1. add token.json with "token": "[your hugginggface token]"
-2. run train_main.py to train models
+2. install libraries
+3. run train_main.py to train models
