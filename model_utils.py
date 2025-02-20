@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import timm
+import config
 from huggingface_hub import login, hf_hub_download
 import os
 from sklearn.metrics import f1_score, recall_score, precision_score, accuracy_score
@@ -102,6 +103,7 @@ def evaluate(config, model, dataloader) -> dict:
     return {"f1_score": f1_score_, "recall": recall, "precision": precision, "accuracy": accuracy}
 
 def train(config: dict, hyperparameter: dict, save_best: bool) -> None:
+    
     train_data, val_data, test_data = datasets_utils.get_data_loader(config, hyperparameter)
     model = load_model(config, hyperparameter, num_classes=train_data.dataset.get_num_classes()).to(config["device"])
 
@@ -176,3 +178,6 @@ def train_best_model(config: dict, best_hyperparameters: dict) -> nn.Module:
     return scores
 
             
+if __name__ == "__main__":
+    conf = config.get_config("uni", "breakhis")
+    load_model(conf, {"layer_dims": [256], "dropout": 0.1}, 2)

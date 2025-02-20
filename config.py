@@ -13,7 +13,9 @@ def get_config(model: str, dataset: str) -> dict:
         "val_size": 0.1,
         "uni_path": "./assets/models/uni/",
         "breakhis_path": "./assets/data/breakhis/",
-        "oxford_pet_path": "./assets/data/oxford_pet/"
+        "oxford_pet_path": "./assets/data/oxford_pet/",
+        "multi_cancer_path": "./assets/data/multi_cancer/",
+        "multi_cancer_type": None
     }
 
     if dataset in ["oxford_pet", "breakhis"]:
