@@ -15,7 +15,8 @@ def get_config(model: str, dataset: str) -> dict:
         "breakhis_path": "./assets/data/breakhis/",
         "oxford_pet_path": "./assets/data/oxford_pet/",
         "multi_cancer_path": "./assets/data/multi_cancer/",
-        "multi_cancer_type": None
+        "multi_cancer_type": None,
+        "breast_segmentation_path": "./assets/data/breast_segmentation/",
     }
 
     if dataset in ["oxford_pet", "breakhis"]:
@@ -38,6 +39,7 @@ def get_models() -> list:
 
 def get_datasets() -> list:
     return ["breakhis"]
+    # return ["breakhis", "multi_cancer", "oxford_pet"]
 
 def get_grid_params() -> dict:
     grid_param = dict()

@@ -2,6 +2,7 @@
 import logging
 import os
 import datetime
+import config
 
 import model_utils
 import utils
@@ -9,9 +10,9 @@ import utils
 os.makedirs("logs", exist_ok=True)   
 
 
-models = utils.get_models()
-datasets = utils.get_datasets()
-GRID_PARAMS = utils.get_grid_params()
+models = config.get_models()
+datasets = config.get_datasets()
+GRID_PARAMS = config.get_grid_params()
 
 def train_model_with_dataset(model: str, dataset: str, GRID_PARAMS: dict, CONFIG: dict) -> None:
     logging.info(f"Training model {model} with dataset {dataset}")
