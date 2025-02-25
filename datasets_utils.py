@@ -138,7 +138,7 @@ def load_oxford_pet(config, hyperparameter):
     test_data = OxfordPetDataset("test", config, hyperparameter)
     return train_data, val_data, test_data
 
-def load_breakhis(config, hyperparameter):
+def load_breakhis(config, hyperparameter, small=False):
     """
     Function to download and load BreakHis Dataset
     """
@@ -158,6 +158,9 @@ def load_breakhis(config, hyperparameter):
         test_df = df[df["grp"] == "test"]
 
         train_df, val_df = train_test_split(train_df, test_size=config["val_size"], stratify=train_df["label"])
+        if small:
+            assert config["dataset"] == "breakhis_small"
+            train_df, _ = train_test_split(train_df, test_size=config["reduction_value"], stratify=train_df["label"])
 
         train_df.to_csv(f"{config['breakhis_path']}4/Folds_train_{config['mag']}.csv", index=False)
         val_df.to_csv(f"{config['breakhis_path']}4/Folds_val_{config['mag']}.csv", index=False)
@@ -197,7 +200,7 @@ def get_data_loader(config, hyperparameter=None):
     """
     Downloads Dataset given in the config dict if not present and returns DataLoaders
     """
-    assert config["dataset"] in ["oxford_pet", "breakhis", "multi_cancer"]
+    assert config["dataset"] in ["oxford_pet", "breakhis", "multi_cancer", "breakhis_small"]
     
     if config["dataset"] == "oxford_pet":
         train_data, val_data, test_data = load_oxford_pet(config, hyperparameter)
@@ -209,6 +212,9 @@ def get_data_loader(config, hyperparameter=None):
     if config["dataset"] == "multi_cancer":
         train_data, val_data, test_data = load_multi_cancer(config, hyperparameter)
 
+    if config["dataset"] == "breakhis_small":
+        train_data, val_data, test_data = load_breakhis(config, hyperparameter, small=True)
+
     train_loader = DataLoader(train_data, batch_size=config["batch_size"], shuffle=True)
     val_loader = DataLoader(val_data, batch_size=config["batch_size"], shuffle=False) if val_data is not None else None
     test_loader = DataLoader(test_data, batch_size=config["batch_size"], shuffle=False)
@@ -219,16 +225,20 @@ def get_samples(data_loader, num_per_class=5):
     """
     Function to get test samples from the DataLoader for each class
     """
-    num_classes = data_loader.dataset.get_num_classes()
+    dataset = data_loader.dataset
+    num_classes = dataset.get_num_classes()
     samples = []
+
     for i in range(num_classes):
-        count = 0
-        for img, label, path in data_loader:
-            if label[0] == i:
-                samples.append((img[0], label[0], path[0]))
-                count += 1
-            if count == num_per_class:
-                break
+        class_samples = []
+        for j, (input, label, path) in enumerate(dataset):
+            if label == i:
+                class_samples.append((input, label, path))
+                if len(class_samples) == num_per_class:
+                    break
+
+        samples.extend(class_samples)
+
     return samples
 
 
