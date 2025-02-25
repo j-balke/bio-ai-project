@@ -105,7 +105,7 @@ def evaluate(config, model, dataloader) -> dict:
 
     return {"f1_score": f1_score_, "recall": recall, "precision": precision, "accuracy": accuracy}
 
-def train(config: dict, hyperparameter: dict, save_best: bool) -> None:
+def train(config: dict, hyperparameter: dict, save_best: bool) -> dict:
     
     train_data, val_data, test_data = datasets_utils.get_data_loader(config, hyperparameter)
     model = load_model(config, hyperparameter, num_classes=train_data.dataset.get_num_classes()).to(config["device"])
@@ -157,7 +157,7 @@ def train(config: dict, hyperparameter: dict, save_best: bool) -> None:
     return {"accuracy": best_acc, "f1_score": best_f1, "recall": best_recall, "precision": best_precision}
 
 
-def grid_search(config: dict, hyperparam_dict: dict) -> None:
+def grid_search(config: dict, hyperparam_dict: dict):
     hyperparameters = utils.get_combinations(**hyperparam_dict)
     print(f"Amount of configurations: {len(hyperparameters)}")
     best_hyperparameters = None
@@ -176,7 +176,7 @@ def grid_search(config: dict, hyperparam_dict: dict) -> None:
 
     return best_hyperparameters, all_scores
 
-def train_best_model(config: dict, best_hyperparameters: dict) -> nn.Module:
+def train_best_model(config: dict, best_hyperparameters: dict):
     config["epochs"] = 8
     scores = train(config, best_hyperparameters, save_best=True)
 
