@@ -25,7 +25,7 @@ def get_config(model: str, dataset: str) -> dict:
         config["num_classes"] = 2
         config["img_size"] = 224
 
-    if dataset == "breakhis_small":
+    if dataset in ["multi_cancer_small", "breakhis_small"]:
         config["reduction_value"] = 0.7
 
     if dataset in ["breakhis", "breakhis_small"]:
