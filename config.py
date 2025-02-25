@@ -8,7 +8,7 @@ def get_config(model: str, dataset: str) -> dict:
         "device": "cuda" if torch.cuda.is_available() else "cpu",
         "batch_size": 10,
         "metric": "f1_score",
-        "epochs": 2,
+        "epochs": 8,
         "scheduler": False,
         "val_size": 0.1,
         "uni_path": "./assets/models/uni/",

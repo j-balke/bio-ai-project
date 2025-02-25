@@ -165,7 +165,7 @@ def grid_search(config: dict, hyperparam_dict: dict) -> None:
     all_scores = {}
 
     for hyperparameter in tqdm(hyperparameters, "grid_search configurations"):
-        hyperparameter["epochs"] = 1
+        config["epochs"] = 1
         scores = train(config, hyperparameter, save_best=False)
 
         all_scores[str(hyperparameter)] = scores
@@ -177,7 +177,7 @@ def grid_search(config: dict, hyperparam_dict: dict) -> None:
     return best_hyperparameters, all_scores
 
 def train_best_model(config: dict, best_hyperparameters: dict) -> nn.Module:
-    best_hyperparameters["epochs"] = 8
+    config["epochs"] = 8
     scores = train(config, best_hyperparameters, save_best=True)
 
     return scores
