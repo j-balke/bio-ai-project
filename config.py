@@ -12,11 +12,13 @@ def get_config(model: str, dataset: str) -> dict:
         "scheduler": False,
         "val_size": 0.1,
         "uni_path": "./assets/models/uni/",
+        "resnet_path": "./assets/models/resnet/",
+        "vit_path": "./assets/models/vit/",
+        "conch_path": "./assets/models/conch/",
         "breakhis_path": "./assets/data/breakhis/",
         "oxford_pet_path": "./assets/data/oxford_pet/",
         "multi_cancer_path": "./assets/data/multi_cancer/",
         "multi_cancer_type": None,
-        "breast_segmentation_path": "./assets/data/breast_segmentation/",
     }
 
     if dataset in ["oxford_pet", "breakhis"]:
@@ -31,15 +33,15 @@ def get_config(model: str, dataset: str) -> dict:
 
     return config
 
-def get_models() -> list:
-    # vit: https://huggingface.co/timm/vit_large_patch16_224.augreg_in21k
-    # resnet: https://huggingface.co/timm/resnet50.a1_in1k
-    # uni: https://huggingface.co/MahmoodLab/UNI
-    return ["uni", "resnet", "vit"]
+# def get_models() -> list:
+#     # vit: https://huggingface.co/timm/vit_large_patch16_224.augreg_in21k
+#     # resnet: https://huggingface.co/timm/resnet50.a1_in1k
+#     # uni: https://huggingface.co/MahmoodLab/UNI
+#     return ["uni", "resnet", "vit", "conch"]
 
 def get_datasets() -> list:
-    return ["breakhis"]
-    # return ["breakhis", "multi_cancer", "oxford_pet"]
+    # return ["breakhis"]
+    return ["breakhis", "oxford_pet", "multi_cancer"]
 
 def get_grid_params() -> dict:
     grid_param = dict()

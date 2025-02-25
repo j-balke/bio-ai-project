@@ -2,10 +2,11 @@ import torch
 import torch.nn as nn
 import timm
 import config
+from tqdm import tqdm
 from huggingface_hub import login, hf_hub_download
 import os
 from sklearn.metrics import f1_score, recall_score, precision_score, accuracy_score
-
+from conch.open_clip_custom import create_model_from_pretrained
 import datasets_utils
 import utils
 
@@ -31,25 +32,27 @@ def load_model(config: dict, hyperparamter: dict, num_classes: int) -> nn.Module
     """
     Load model from huggingface hub and add classifier head to it
     """
-    login(token=config["token"])
+    # login(token=config["token"])
 
     assert config["model"] in ["uni", "vit", "resnet", "conch"], "Error: Model not supported"
     
     if config["model"] == "uni":
         os.makedirs(config["uni_path"], exist_ok=True)
-        hf_hub_download("MahmoodLab/UNI", filename="pytorch_model.bin", local_dir=config["uni_path"], force_download=True)
+        # hf_hub_download("MahmoodLab/UNI", filename="pytorch_model.bin", local_dir=config["uni_path"], force_download=True)
         model = timm.create_model(
             "vit_large_patch16_224", img_size=224, patch_size=16, init_values=1e-5, num_classes=0, dynamic_img_size=True
         )
         model.load_state_dict(torch.load(f"{config['uni_path']}pytorch_model.bin", map_location="cpu"), strict=True)
     elif config["model"] == "vit":
-        model = timm.create_model('vit_large_patch16_224.augreg_in21k', pretrained=True)
+        model = timm.create_model('vit_large_patch16_224.augreg_in21k', pretrained=True, checkpoint_path=config["vit_path"] + "model.pth")
     elif config["model"] == "resnet":
-        model = timm.create_model('resnet50.a1_in1k', pretrained=True)
+        model = timm.create_model('resnet50.a1_in1k', pretrained=True, checkpoint_path=config["resnet_path"] + "model.pth")
+        model
     elif config["model"] == "conch":
-        pass
-        
-    head = ClassifierHead(model.num_features, num_classes, hyperparamter["layer_dims"], hyperparamter["dropout"])
+        # hf_hub_download("MahmoodLab/CONCH", filename="pytorch_model.bin", local_dir=config["conch_path"], force_download=True)
+        model = create_model_from_pretrained('conch_ViT-B-16', config["conch_path"] + "pytorch_model.bin", return_transform=False ) 
+    
+    head = ClassifierHead(model.embed_dim, num_classes, hyperparamter["layer_dims"], hyperparamter["dropout"])
     model.head = head
     return model
 
@@ -107,14 +110,14 @@ def train(config: dict, hyperparameter: dict, save_best: bool) -> None:
     train_data, val_data, test_data = datasets_utils.get_data_loader(config, hyperparameter)
     model = load_model(config, hyperparameter, num_classes=train_data.dataset.get_num_classes()).to(config["device"])
 
-    print(f"freeze layers: {config['num_unfreezed_layers']}")
-    freeze_layers(model, hyperparameter["num_unfreezed_layers"])
+    # print(f"freeze layers: {config['num_unfreezed_layers']}")
+    freeze_layers(model, config["num_unfreezed_layers"])
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=hyperparameter["lr"])
 
     if config["scheduler"]:
-        print("ToDo: Implement scheduler")
+        scheduler = torch.optim.lr_scheduler.PolynomialLR(optimizer)
 
     best_acc, best_f1, best_recall, best_precision = 0, 0, 0, 0    
     for epoch in range(config["epochs"]):
@@ -126,8 +129,10 @@ def train(config: dict, hyperparameter: dict, save_best: bool) -> None:
             loss = criterion(output, label)
             loss.backward()
             optimizer.step()
+        if config["scheduler"]:
+            scheduler.step()
         
-        print(f"Epoch: {epoch}, Loss: {loss.item()}")
+        # print(f"Epoch: {epoch}, Loss: {loss.item()}")
 
         evaluation_scores = evaluate(config, model, val_data)
         if evaluation_scores[config["metric"]] > best_f1:
@@ -154,12 +159,12 @@ def train(config: dict, hyperparameter: dict, save_best: bool) -> None:
 
 def grid_search(config: dict, hyperparam_dict: dict) -> None:
     hyperparameters = utils.get_combinations(**hyperparam_dict)
-    print(f"hyperparameters: {hyperparameters}")
+    print(f"Amount of configurations: {len(hyperparameters)}")
     best_hyperparameters = None
     best_f1 = 0
     all_scores = {}
 
-    for hyperparameter in hyperparameters:
+    for hyperparameter in tqdm(hyperparameters, "grid_search configurations"):
         hyperparameter["epochs"] = 1
         scores = train(config, hyperparameter, save_best=False)
 
@@ -180,4 +185,6 @@ def train_best_model(config: dict, best_hyperparameters: dict) -> nn.Module:
             
 if __name__ == "__main__":
     conf = config.get_config("uni", "breakhis")
-    load_model(conf, {"layer_dims": [256], "dropout": 0.1}, 2)
+    
+    model = load_model(conf, {"layer_dims": [256], "dropout": 0.1}, 2)
+    # torch.save(model.state_dict(), conf["vit_path"]+ "model.pth")
