@@ -215,6 +215,22 @@ def get_data_loader(config, hyperparameter=None):
     
     return train_loader, val_loader, test_loader
 
+def get_samples(data_loader, num_per_class=5):
+    """
+    Function to get test samples from the DataLoader for each class
+    """
+    num_classes = data_loader.dataset.get_num_classes()
+    samples = []
+    for i in range(num_classes):
+        count = 0
+        for img, label, path in data_loader:
+            if label[0] == i:
+                samples.append((img[0], label[0], path[0]))
+                count += 1
+            if count == num_per_class:
+                break
+    return samples
+
 
 if __name__ == "__main__":
     config = get_config("uni", "oxford_pet")
