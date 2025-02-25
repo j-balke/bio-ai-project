@@ -16,4 +16,4 @@ def mask_config(config: dict) -> dict:
     return masked_config
 
 def get_model_path(config: dict) -> str:
-    return f"./assets/models/{config['dataset']}/{config['model']}"
+    return f"./assets/models/{config['dataset']}/{config['model']}_{config['num_unfreezed_layers']}_unfreezed_layers"

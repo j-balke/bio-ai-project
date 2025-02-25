@@ -120,7 +120,7 @@ def train(config: dict, hyperparameter: dict, save_best: bool) -> None:
         scheduler = torch.optim.lr_scheduler.PolynomialLR(optimizer)
 
     best_acc, best_f1, best_recall, best_precision = 0, 0, 0, 0    
-    for epoch in range(config["epochs"]):
+    for epoch in tqdm(range(config["epochs"]), "training model"):
         model.train()
         for i, (img, label, _) in enumerate(train_data):
             optimizer.zero_grad()
