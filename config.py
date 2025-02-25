@@ -44,7 +44,7 @@ def get_config(model: str, dataset: str) -> dict:
 
 def get_datasets() -> list:
     # return ["breakhis"]
-    return ["breakhis", "oxford_pet", "multi_cancer", "breakhis_small"]
+    return ["breakhis", "oxford_pet", "multi_cancer", "breakhis_small", "multi_cancer_small"]
 
 def get_grid_params() -> dict:
     grid_param = dict()
