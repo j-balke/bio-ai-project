@@ -21,11 +21,14 @@ def get_config(model: str, dataset: str) -> dict:
         "multi_cancer_type": None,
     }
 
-    if dataset in ["oxford_pet", "breakhis"]:
+    if dataset in ["oxford_pet", "breakhis", "breakhis_small"]:
         config["num_classes"] = 2
         config["img_size"] = 224
 
-    if dataset == "breakhis":
+    if dataset == "breakhis_small":
+        config["reduction_value"] = 0.7
+
+    if dataset in ["breakhis", "breakhis_small"]:
         config["mag"] = 400
 
     with open("./token.json", "r") as f:
@@ -41,7 +44,7 @@ def get_config(model: str, dataset: str) -> dict:
 
 def get_datasets() -> list:
     # return ["breakhis"]
-    return ["breakhis", "oxford_pet", "multi_cancer"]
+    return ["breakhis", "oxford_pet", "multi_cancer", "breakhis_small"]
 
 def get_grid_params() -> dict:
     grid_param = dict()
