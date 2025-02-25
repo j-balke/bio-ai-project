@@ -2,3 +2,4 @@ __pycache__
 logs/*
 assets/models/*/*
 assets/data/*
+token.json
