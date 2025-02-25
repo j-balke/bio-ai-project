@@ -48,7 +48,7 @@ def get_grid_params() -> dict:
     grid_param["lr"] = [1e-5, 1e-4]
     grid_param["layer_dims"] = [[256], [], [512, 64]]
     grid_param["data_augmentation_prob"] = [0, 0.5]
-    grid_param["num_unfreezed_layers"] = [0,2,6]
+    # grid_param["num_unfreezed_layers"] = [0,2,6]
     grid_param["dropout"] = [0.1]
 
     return grid_param
