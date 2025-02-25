@@ -146,9 +146,9 @@ def train(config: dict, hyperparameter: dict, save_best: bool) -> dict:
                 os.makedirs(path, exist_ok=True)
                 torch.save(model, f"{path}/model.pth")
     
-    if test_data:
+    if save_best:
         test_scores = evaluate(config, model, test_data)
-        print(f"Test Scores: {test_scores}")
+        return test_scores
 
     # remove mode from gpu and free memory to avoid out of memory error
     del model

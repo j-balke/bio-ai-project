@@ -171,7 +171,7 @@ def load_breakhis(config, hyperparameter, small=False):
     test_data = BreakHisDataset("test", config, hyperparameter)
     return train_data, val_data, test_data
 
-def load_multi_cancer(config, hyperparameter):
+def load_multi_cancer(config, hyperparameter, small=False):
 
     if not os.path.exists(config["multi_cancer_path"]):
         os.makedirs(config["multi_cancer_path"])
@@ -189,6 +189,11 @@ def load_multi_cancer(config, hyperparameter):
 
     train_df, test_df = train_test_split(data_df, test_size=0.2, stratify=data_df["label"])
     train_df, val_df = train_test_split(train_df, test_size=config["val_size"], stratify=train_df["label"])
+
+    if small:
+        assert config["dataset"] == "multi_cancer_small"
+        train_df, _ = train_test_split(train_df, test_size=config["reduction_value"], stratify=train_df["label"])
+
 
     train_data = MultiCancerDataset(data_df=train_df, set_type="train", config=config, hyperparameter=hyperparameter)
     val_data = MultiCancerDataset(data_df=val_df, set_type="val", config=config, hyperparameter=hyperparameter)
@@ -214,6 +219,9 @@ def get_data_loader(config, hyperparameter=None):
 
     if config["dataset"] == "breakhis_small":
         train_data, val_data, test_data = load_breakhis(config, hyperparameter, small=True)
+    
+    if config["dataset"] == "multi_cancer_small":
+        train_data, val_data, test_data = load_multi_cancer(config, hyperparameter, small=True)
 
     train_loader = DataLoader(train_data, batch_size=config["batch_size"], shuffle=True)
     val_loader = DataLoader(val_data, batch_size=config["batch_size"], shuffle=False) if val_data is not None else None
