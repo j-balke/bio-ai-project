@@ -124,6 +124,38 @@ class MultiCancerDataset(Dataset):
     def get_num_classes(self):
         return len(set(self.df["label"]))
     
+class BreastCancerDataset(Dataset):
+    def __init__(self, data_df, set_type, config, hyperparameter=None):
+        self.df = data_df
+        self.set_type = set_type
+        self.data_augmentation_prob = hyperparameter["data_augmentation_prob"] if hyperparameter is not None else 0.0
+        self.transform = self.get_transform(self.data_augmentation_prob, self.set_type)
+
+    def __len__(self):
+        return self.df.shape[0]
+    
+    def __getitem__(self, idx):
+        path = self.df.loc[idx, "filename"]
+        img = Image.open(path)
+        img = self.transform(img)
+        label = torch.tensor(self.df.loc[idx, "label"])
+        return (img, label, path)
+
+    def get_transform(self, data_augmentation_prob: float, set_type: str):
+        transform_list = []
+        transform_list.append(transforms.Resize((224, 224)))
+
+        if data_augmentation_prob > 0.0 and self.set_type == "train":
+            transform_list.append(transforms.RandomHorizontalFlip(p=data_augmentation_prob))
+            transform_list.append(transforms.RandomVerticalFlip(p=data_augmentation_prob))
+
+        transform_list.append(transforms.ToTensor())
+        transform_list.append(transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]))
+        return transforms.Compose(transform_list)
+        
+    def get_num_classes(self):
+        return len(set(self.df["label"]))
+    
 def load_oxford_pet(config, hyperparameter):
     """
     Function to download and load Oxford Pet Dataset
@@ -171,6 +203,30 @@ def load_breakhis(config, hyperparameter, small=False):
     test_data = BreakHisDataset("test", config, hyperparameter)
     return train_data, val_data, test_data
 
+def load_breast_cancer(config, hyperparameter):
+    if not os.path.exists(config["breast_cancer_path"]):
+        os.makedirs(config["breast_cancer_path"])
+        path = dataset_download("andrewmvd/breast-cancer-cell-segmentation")
+        shutil.move(path, config["breast_cancer_path"])
+
+    pathes = os.listdir(f"{config["breast_cancer_path"]}1/Images")
+    pathes = [f"{config["breast_cancer_path"]}1/Images/{path}" 
+            for path in pathes if path.endswith(".tif")]
+
+    labels = [1 if "malignant" in path else 0 for path in pathes]
+
+    df = pd.DataFrame({"filename": pathes, "label": labels})
+
+    train_df, test_df = train_test_split(df, test_size=0.2, stratify=df["label"], random_state=config["seed"])
+    train_df, val_df = train_test_split(train_df, test_size=config["val_size"], stratify=train_df["label"], random_state=config["seed"])
+
+    train_data = BreastCancerDataset(data_df=train_df, set_type="train", config=config, hyperparameter=hyperparameter)
+    val_data = BreastCancerDataset(data_df=val_df, set_type="val", config=config, hyperparameter=hyperparameter)
+    test_data = BreastCancerDataset(data_df=test_df, set_type="test", config=config, hyperparameter=hyperparameter)
+
+    return train_data, val_data, test_data
+    
+
 def load_multi_cancer(config, hyperparameter, small=False):
 
     if not os.path.exists(config["multi_cancer_path"]):
@@ -205,7 +261,7 @@ def get_data_loader(config, hyperparameter=None):
     """
     Downloads Dataset given in the config dict if not present and returns DataLoaders
     """
-    assert config["dataset"] in ["oxford_pet", "breakhis", "multi_cancer", "breakhis_small", "multi_cancer_small"]
+    assert config["dataset"] in ["oxford_pet", "breakhis", "multi_cancer", "breakhis_small"]
     
     if config["dataset"] == "oxford_pet":
         train_data, val_data, test_data = load_oxford_pet(config, hyperparameter)
@@ -216,6 +272,9 @@ def get_data_loader(config, hyperparameter=None):
 
     if config["dataset"] == "multi_cancer":
         train_data, val_data, test_data = load_multi_cancer(config, hyperparameter)
+
+    if config["dataset"] == "breast_cancer":
+        train_data, val_data, test_data = load_breast_cancer(config, hyperparameter)
 
     if config["dataset"] == "breakhis_small":
         train_data, val_data, test_data = load_breakhis(config, hyperparameter, small=True)
@@ -251,7 +310,7 @@ def get_samples(data_loader, num_per_class=5):
 
 
 if __name__ == "__main__":
-    config = get_config("uni", "oxford_pet")
+    config = get_config("uni", "breast_cancer")
     get_data_loader(config)
 
 
