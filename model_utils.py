@@ -43,16 +43,24 @@ def load_model(config: dict, hyperparamter: dict, num_classes: int) -> nn.Module
             "vit_large_patch16_224", img_size=224, patch_size=16, init_values=1e-5, num_classes=0, dynamic_img_size=True
         )
         model.load_state_dict(torch.load(f"{config['uni_path']}pytorch_model.bin", map_location="cpu"), strict=True)
+        n_features = model.embed_dim
     elif config["model"] == "vit":
-        model = timm.create_model('vit_large_patch16_224.augreg_in21k', pretrained=True, checkpoint_path=config["vit_path"] + "model.pth")
+        model = timm.create_model('vit_large_patch16_224.augreg_in21k')
+        model.load_state_dict(torch.load(f"{config['vit_path']}model.pth", map_location="cpu"), strict=True)
+        n_features = model.embed_dim
     elif config["model"] == "resnet":
-        model = timm.create_model('resnet50.a1_in1k', pretrained=True, checkpoint_path=config["resnet_path"] + "model.pth")
-        model
+        model = timm.create_model('resnet50.a1_in1k')
+        model.load_state_dict(torch.load(f"{config['resnet_path']}model.pth", map_location="cpu"), strict=True)
+        n_features = model.num_features
     elif config["model"] == "conch":
         # hf_hub_download("MahmoodLab/CONCH", filename="pytorch_model.bin", local_dir=config["conch_path"], force_download=True)
         model = create_model_from_pretrained('conch_ViT-B-16', config["conch_path"] + "pytorch_model.bin", return_transform=False ) 
+        # model = timm.create_model('conch_ViT-B-16')
+        model.load_state_dict(torch.load(f"{config['conch_path']}pytorch_model.bin", map_location="cpu"), strict=True)
+        n_features = model.embed_dim
+
     
-    head = ClassifierHead(model.embed_dim, num_classes, hyperparamter["layer_dims"], hyperparamter["dropout"])
+    head = ClassifierHead(n_features, num_classes, hyperparamter["layer_dims"], hyperparamter["dropout"])
     model.head = head
     return model
 
@@ -184,7 +192,8 @@ def train_best_model(config: dict, best_hyperparameters: dict):
 
             
 if __name__ == "__main__":
-    conf = config.get_config("uni", "breakhis")
+    conf = config.get_config("resnet", "breakhis")
     
     model = load_model(conf, {"layer_dims": [256], "dropout": 0.1}, 2)
-    # torch.save(model.state_dict(), conf["vit_path"]+ "model.pth")
+    print(model)
+    # torch.save(model.state_dict(), conf["resnet_path"]+ "model.pth")
