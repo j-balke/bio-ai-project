@@ -53,10 +53,10 @@ def load_model(config: dict, hyperparamter: dict, num_classes: int) -> nn.Module
         model.load_state_dict(torch.load(f"{config['resnet_path']}model.pth", map_location="cpu"), strict=True)
         n_features = model.num_features
     elif config["model"] == "conch":
-        # hf_hub_download("MahmoodLab/CONCH", filename="pytorch_model.bin", local_dir=config["conch_path"], force_download=True)
+        hf_hub_download("MahmoodLab/CONCH", filename="pytorch_model.bin", local_dir=config["conch_path"])
         model = create_model_from_pretrained('conch_ViT-B-16', config["conch_path"] + "pytorch_model.bin", return_transform=False ) 
         # model = timm.create_model('conch_ViT-B-16')
-        model.load_state_dict(torch.load(f"{config['conch_path']}pytorch_model.bin", map_location="cpu"), strict=True)
+        # model.load_state_dict(torch.load(f"{config['conch_path']}pytorch_model.bin", map_location="cpu"), strict=True)
         n_features = model.embed_dim
 
     
@@ -194,7 +194,7 @@ def train_best_model(config: dict, best_hyperparameters: dict):
 
             
 if __name__ == "__main__":
-    conf = config.get_config("resnet", "breakhis")
+    conf = config.get_config("conch", "breakhis")
     
     model = load_model(conf, {"layer_dims": [256], "dropout": 0.1}, 2)
     print(model)

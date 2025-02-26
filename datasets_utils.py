@@ -209,8 +209,8 @@ def load_breast_cancer(config, hyperparameter):
         path = dataset_download("andrewmvd/breast-cancer-cell-segmentation")
         shutil.move(path, config["breast_cancer_path"])
 
-    pathes = os.listdir(f"{config["breast_cancer_path"]}1/Images")
-    pathes = [f"{config["breast_cancer_path"]}1/Images/{path}" 
+    pathes = os.listdir(f"{config['breast_cancer_path']}1/Images")
+    pathes = [f"{config['breast_cancer_path']}1/Images/{path}" 
             for path in pathes if path.endswith(".tif")]
 
     labels = [1 if "malignant" in path else 0 for path in pathes]
