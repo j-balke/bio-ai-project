@@ -157,10 +157,10 @@ def load_breakhis(config, hyperparameter, small=False):
         train_df = df[df["grp"] == "train"]
         test_df = df[df["grp"] == "test"]
 
-        train_df, val_df = train_test_split(train_df, test_size=config["val_size"], stratify=train_df["label"])
+        train_df, val_df = train_test_split(train_df, test_size=config["val_size"], stratify=train_df["label"], random_state=config["seed"])
         if small:
             assert config["dataset"] == "breakhis_small"
-            train_df, _ = train_test_split(train_df, test_size=config["reduction_value"], stratify=train_df["label"])
+            train_df, _ = train_test_split(train_df, test_size=config["reduction_value"], stratify=train_df["label"], random_state=config["seed"])
 
         train_df.to_csv(f"{config['breakhis_path']}4/Folds_train_{config['mag']}.csv", index=False)
         val_df.to_csv(f"{config['breakhis_path']}4/Folds_val_{config['mag']}.csv", index=False)
@@ -187,12 +187,12 @@ def load_multi_cancer(config, hyperparameter, small=False):
         files = glob.glob(dir_path + "/*")
         data_df = pd.concat([data_df, pd.DataFrame({"filename": files, "label": label})])
 
-    train_df, test_df = train_test_split(data_df, test_size=0.2, stratify=data_df["label"])
-    train_df, val_df = train_test_split(train_df, test_size=config["val_size"], stratify=train_df["label"])
+    train_df, test_df = train_test_split(data_df, test_size=0.2, stratify=data_df["label"], random_state=config["seed"])
+    train_df, val_df = train_test_split(train_df, test_size=config["val_size"], stratify=train_df["label"], random_state=config["seed"])
 
     if small:
         assert config["dataset"] == "multi_cancer_small"
-        train_df, _ = train_test_split(train_df, test_size=config["reduction_value"], stratify=train_df["label"])
+        train_df, _ = train_test_split(train_df, test_size=config["reduction_value"], stratify=train_df["label"], random_state=config["seed"])
 
 
     train_data = MultiCancerDataset(data_df=train_df, set_type="train", config=config, hyperparameter=hyperparameter)
