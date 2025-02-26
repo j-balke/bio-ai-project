@@ -261,7 +261,7 @@ def get_data_loader(config, hyperparameter=None):
     """
     Downloads Dataset given in the config dict if not present and returns DataLoaders
     """
-    assert config["dataset"] in ["oxford_pet", "breakhis", "multi_cancer", "breakhis_small"]
+    assert config["dataset"] in ["oxford_pet", "breakhis", "multi_cancer", "breakhis_small", "multi_cancer_small", "breast_cancer"]
     
     if config["dataset"] == "oxford_pet":
         train_data, val_data, test_data = load_oxford_pet(config, hyperparameter)
