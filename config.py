@@ -17,17 +17,19 @@ def get_config(model: str, dataset: str) -> dict:
         "vit_path": "./assets/models/vit/",
         "conch_path": "./assets/models/conch/",
         "breakhis_path": "./assets/data/breakhis/",
+        "breast_cancer_path": "./assets/data/breast_cancer/",
         "oxford_pet_path": "./assets/data/oxford_pet/",
         "multi_cancer_path": "./assets/data/multi_cancer/",
         "multi_cancer_type": None,
+        "img_size": 224
     }
 
-    if dataset in ["oxford_pet", "breakhis", "breakhis_small"]:
+    if dataset in ["oxford_pet", "breakhis", "breakhis_small", "breast_cancer"]:
         config["num_classes"] = 2
-        config["img_size"] = 224
+        # config["img_size"] = 224
 
     if dataset in ["multi_cancer_small", "breakhis_small"]:
-        config["reduction_value"] = 0.7
+        config["reduction_value"] = 0.8
 
     if dataset in ["breakhis", "breakhis_small"]:
         config["mag"] = 400
@@ -45,7 +47,7 @@ def get_config(model: str, dataset: str) -> dict:
 
 def get_datasets() -> list:
     # return ["breakhis"]
-    return ["breakhis", "oxford_pet", "multi_cancer", "breakhis_small", "multi_cancer_small"]
+    return ["breakhis", "oxford_pet", "multi_cancer", "breakhis_small", "multi_cancer_small", "breast_cancer"]
 
 def get_grid_params() -> dict:
     grid_param = dict()
