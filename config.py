@@ -11,6 +11,7 @@ def get_config(model: str, dataset: str) -> dict:
         "epochs": 8,
         "scheduler": False,
         "val_size": 0.1,
+        "seed": 0,
         "uni_path": "./assets/models/uni/",
         "resnet_path": "./assets/models/resnet/",
         "vit_path": "./assets/models/vit/",

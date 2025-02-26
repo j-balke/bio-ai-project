@@ -155,6 +155,8 @@ def train(config: dict, hyperparameter: dict, save_best: bool) -> dict:
                 torch.save(model, f"{path}/model.pth")
     
     if save_best:
+        path = utils.get_model_path(config)
+        model = torch.load(f"{path}/model.pth")
         test_scores = evaluate(config, model, test_data)
         return test_scores
 
