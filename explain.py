@@ -5,7 +5,7 @@ import os
 import sys
 sys.path.append("./vit-explain-main")
 
-from pytorch_grad_cam import GradCAM, ScoreCAM
+from pytorch_grad_cam import GradCAM, ScoreCAM, EigenCAM, EigenGradCAM, LayerCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 from vit_rollout import VITAttentionRollout, rollout
@@ -17,8 +17,7 @@ import utils
 import config
 import pandas as pd
 
-GRAD_CAM_METHODS = {"grad-cam": GradCAM, "score-cam": ScoreCAM}
-GRAD_CAM_METHODS = {"grad-cam": GradCAM}
+GRAD_CAM_METHODS = {"grad-cam": GradCAM, "score-cam": ScoreCAM, "eigen-cam": EigenCAM, "eigen-grad-cam": EigenGradCAM, "layer-cam": LayerCAM}
 DATASETS = config.get_datasets()
 MODELS = ["vit", "resnet", "uni", "conch"]
 SAVE_PATH = "./assets/explanations"
