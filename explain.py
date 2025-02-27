@@ -58,7 +58,7 @@ def load_model(config):
 
 def get_target_layers(model_name, model):
     if model_name == "resnent":
-        print("implement resnet")
+        return [model.layer4[-1]]
     
     return [model.blocks[-1].norm1]
 
