@@ -94,7 +94,7 @@ class BreakHisDataset(Dataset):
     
 class MultiCancerDataset(Dataset):
     def __init__(self, data_df, set_type, config, hyperparameter=None):
-        self.df = data_df
+        self.df = data_df.reset_index(drop=True)
         self.set_type = set_type
         self.data_augmentation_prob = hyperparameter["data_augmentation_prob"] if hyperparameter is not None else 0.0
         self.transform = self.get_transform(self.data_augmentation_prob, self.set_type)
@@ -126,7 +126,7 @@ class MultiCancerDataset(Dataset):
     
 class BreastCancerDataset(Dataset):
     def __init__(self, data_df, set_type, config, hyperparameter=None):
-        self.df = data_df
+        self.df = data_df.reset_index(drop=True)
         self.set_type = set_type
         self.data_augmentation_prob = hyperparameter["data_augmentation_prob"] if hyperparameter is not None else 0.0
         self.transform = self.get_transform(self.data_augmentation_prob, self.set_type)
@@ -311,7 +311,7 @@ def get_samples(data_loader, num_per_class=5):
 
 if __name__ == "__main__":
     config = get_config("uni", "breast_cancer")
-    get_data_loader(config)
+    a,b, c = get_data_loader(config)
 
 
 

@@ -69,7 +69,6 @@ def freeze_layers(model, num_unfreezed_layers: int) -> None:
     freeze all layers of given model except for head and norm layers before head
     unfreeze last num_unfreezed_layers blocks of the model
     """
-    num_blocks = len(model.blocks)
     for name, param in model.named_parameters():
         if name.startswith(tuple(["head", "norm"])):
             param.requires_grad = True
@@ -80,6 +79,9 @@ def freeze_layers(model, num_unfreezed_layers: int) -> None:
     if num_unfreezed_layers == 0:
         return
     
+
+    
+    num_blocks = len(model.blocks)
     for i in range(num_blocks - num_unfreezed_layers, num_blocks):
         block = model.blocks[i]
         for param in block.parameters():
@@ -194,7 +196,7 @@ def train_best_model(config: dict, best_hyperparameters: dict):
 
             
 if __name__ == "__main__":
-    conf = config.get_config("conch", "breakhis")
+    conf = config.get_config("resnet", "breakhis")
     
     model = load_model(conf, {"layer_dims": [256], "dropout": 0.1}, 2)
     print(model)
