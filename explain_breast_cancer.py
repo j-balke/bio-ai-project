@@ -28,6 +28,17 @@ COLUMNS=["model", "dataset", "num_unfreeze_layers", "method", "label", "original
 os.makedirs(SAVE_PATH, exist_ok=True)
 
 def reshape_transform(tensor, height=14, width=14):
+    """
+    Reshapes the input tensor for models that require a specific input shape.
+
+    Args:
+        tensor (torch.Tensor): The input tensor.
+        height (int, optional): The height of the reshaped tensor. Defaults to 14.
+        width (int, optional): The width of the reshaped tensor. Defaults to 14.
+
+    Returns:
+        torch.Tensor: The reshaped tensor.
+    """
     result = tensor[:, 1:, :].reshape(tensor.size(0),
                                       height, width, tensor.size(2))
 
@@ -35,22 +46,41 @@ def reshape_transform(tensor, height=14, width=14):
     return result
 
 def get_image(path: str, img_size) -> np.ndarray:
+    """
+    Loads and preprocesses an image from the given path.
+
+    Args:
+        path (str): The path to the image file.
+        img_size (int): The size to which the image should be resized.
+
+    Returns:
+        np.ndarray: The preprocessed image as a NumPy array.
+    """
     rgb_img = cv2.imread(path)
     rgb_img = cv2.resize(rgb_img, (img_size, img_size))
     rgb_img = np.float32(rgb_img) / 255
     return rgb_img
 
 def load_model(config):
+    """
+    Loads a pre-trained model from the specified path and prepares it for Grad-CAM.
+
+    Args:
+        config (dict): Configuration dictionary containing model and dataset settings.
+
+    Returns:
+        nn.Module: The loaded and prepared model.
+    """
     model_path = utils.get_model_path(config)
     model = torch.load(model_path + "/model.pth", map_location=config["device"])
     model.eval()
 
-    # unfreeze weigths for Grad-CAM
+    # Unfreeze weights for Grad-CAM
     for param in model.parameters():
         param.requires_grad = True
 
-    # this adaption is necessary for attention rollout, since timm updated its implementation
-    # we doublechecked that the results are the same as before
+    # This adaptation is necessary for attention rollout, since timm updated its implementation.
+    # We double-checked that the results are the same as before.
     if config["model"] == "resnet":
         return model 
         
@@ -62,11 +92,19 @@ def load_model(config):
     for block in model.blocks:
         block.attn.fused_attn = False
 
-    
-    
     return model
 
 def get_target_layers(model_name, model):
+    """
+    Returns the target layers for Grad-CAM based on the model type.
+
+    Args:
+        model_name (str): The name of the model (e.g., 'uni', 'resnet', 'vit', 'conch').
+        model (nn.Module): The model from which to extract the target layers.
+
+    Returns:
+        list: A list of target layers for Grad-CAM.
+    """
     if model_name == "conch":
         return [model.model.visual.trunk.blocks[-1].norm1]
     if model_name == "resnet":
@@ -90,6 +128,18 @@ def get_target_layers(model_name, model):
 #     return iou_score
 
 def evaluate_road(cam_img, input, targets, model):
+    """
+    Evaluates the ROAD (Relevance Order Accuracy Drop) metric for the given Grad-CAM output.
+
+    Args:
+        cam_img (np.ndarray): The Grad-CAM output.
+        input (torch.Tensor): The input tensor to the model.
+        targets (list): The target classes for the input.
+        model (nn.Module): The model being evaluated.
+
+    Returns:
+        tuple: A tuple containing the ROAD scores for most and least relevant regions.
+    """
     cam_metric_most = ROADMostRelevantFirstAverage(percentiles=[0.5, 0.75 , 0.9, 0.95])
     cam_metric_least = ROADLeastRelevantFirstAverage(percentiles=[0.5, 0.75 , 0.9, 0.95])
 
@@ -100,6 +150,18 @@ def evaluate_road(cam_img, input, targets, model):
 
 
 def get_grad_cam_maps(model, samples, config, target_layers):
+    """
+    Generates Grad-CAM maps for the given model and samples.
+
+    Args:
+        model (nn.Module): The model to generate Grad-CAM maps for.
+        samples (list): A list of samples (input, label, path).
+        config (dict): Configuration dictionary containing model and dataset settings.
+        target_layers (list): The target layers for Grad-CAM.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the Grad-CAM results.
+    """
     data = []
 
     save = True
@@ -118,8 +180,7 @@ def get_grad_cam_maps(model, samples, config, target_layers):
                     save_path = os.path.join(SAVE_PATH, f"{config['model']}_{config['dataset']}_{config['num_unfreezed_layers']}_{cam_name}_{i}.jpg")
                     cv2.imwrite(save_path, grayscale_cam)
                     
-
-                    # evaluate results
+                    # Evaluate results
                     road_most, road_least = evaluate_road(grayscale_cams, input, [ClassifierOutputSoftmaxTarget(label.item())], model)
                     data.append([config["model"], config["dataset"], config["num_unfreezed_layers"], cam_name, label.item(), path, save_path, road_most, road_least])
 
@@ -137,7 +198,7 @@ def get_grad_cam_maps(model, samples, config, target_layers):
                     save_path = os.path.join(SAVE_PATH, f"{config['model']}_{config['dataset']}_{config['num_unfreezed_layers']}_{cam_name}_{i}.jpg")
                     cv2.imwrite(save_path, grayscale_cam)
 
-                    # evaluate results
+                    # Evaluate results
                     road_most, road_least = evaluate_road(grayscale_cams, input, [ClassifierOutputSoftmaxTarget(label.item())], model)
                     data.append([config["model"], config["dataset"], config["num_unfreezed_layers"], cam_name, label.item(), path, save_path, road_most, road_least])
             
@@ -145,6 +206,18 @@ def get_grad_cam_maps(model, samples, config, target_layers):
     return pd.DataFrame(data, columns=COLUMNS)
 
 def get_attention_rollout_maps(method, model, samples, config):
+    """
+    Generates attention rollout maps for the given model and samples.
+
+    Args:
+        method (str): The method to use for attention rollout (e.g., 'attn_rollout').
+        model (nn.Module): The model to generate attention rollout maps for.
+        samples (list): A list of samples (input, label, path).
+        config (dict): Configuration dictionary containing model and dataset settings.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the attention rollout results.
+    """
     data = []
     head_fusions = ["mean", "min", "max"] if method == "attn_rollout" else ["mean"]
     save = True
@@ -178,6 +251,17 @@ def get_attention_rollout_maps(method, model, samples, config):
     return pd.DataFrame(data, columns=COLUMNS)
 
 def get_raw_attn_maps(model, samples, config):
+    """
+    Generates raw attention maps for the given model and samples.
+
+    Args:
+        model (nn.Module): The model to generate raw attention maps for.
+        samples (list): A list of samples (input, label, path).
+        config (dict): Configuration dictionary containing model and dataset settings.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the raw attention map results.
+    """
     data = []
     save = True
 

@@ -12,7 +12,18 @@ from config import get_config
 
 
 class OxfordPetDataset(Dataset):
+    """
+    A custom dataset class for the Oxford Pet Dataset.
+    """
     def __init__(self, set_type, config, hyperparameter=None):
+        """
+        Initializes the OxfordPetDataset.
+
+        Args:
+            set_type (str): The type of dataset (e.g., 'train', 'test').
+            config (dict): Configuration dictionary containing dataset paths and settings.
+            hyperparameter (dict, optional): Hyperparameters for data augmentation. Defaults to None.
+        """
         set_type = "training" if set_type == "train" else set_type
         self.path = f"{config['oxford_pet_path']}1/{set_type}_set/{set_type}_set/"
         self.set_type = set_type
@@ -43,6 +54,16 @@ class OxfordPetDataset(Dataset):
         return (img, label, path)
     
     def get_transform(self, data_augmentation_prob: float, set_type: str):
+        """
+        Generates a transformation pipeline for the dataset.
+
+        Args:
+            data_augmentation_prob (float): Probability of applying data augmentation.
+            set_type (str): The type of dataset (e.g., 'train', 'test').
+
+        Returns:
+            transforms.Compose: A composition of image transformations.
+        """
         transform_list = []
         transform_list.append(transforms.Resize((224, 224)))
 
@@ -59,6 +80,9 @@ class OxfordPetDataset(Dataset):
     
 
 class BreakHisDataset(Dataset):
+    """
+    A custom dataset class for the BreakHis Dataset.
+    """
     def __init__(self, set_type, config, hyperparameter=None, fold=1):
         self.df = pd.read_csv(f"{config['breakhis_path']}4/Folds_{set_type}_{config['mag']}.csv").reset_index(drop=True)
         self.path = f"{config['breakhis_path']}4/BreaKHis_v1/"
@@ -93,6 +117,9 @@ class BreakHisDataset(Dataset):
         return len(set(self.df["label"]))
     
 class MultiCancerDataset(Dataset):
+    """
+    A custom dataset class for the Multi-Cancer Dataset.
+    """
     def __init__(self, data_df, set_type, config, hyperparameter=None):
         self.df = data_df.reset_index(drop=True)
         self.set_type = set_type
@@ -158,7 +185,14 @@ class BreastCancerDataset(Dataset):
     
 def load_oxford_pet(config, hyperparameter):
     """
-    Function to download and load Oxford Pet Dataset
+    Downloads and loads the Oxford Pet Dataset.
+
+    Args:
+        config (dict): Configuration dictionary containing dataset paths and settings.
+        hyperparameter (dict): Hyperparameters for data augmentation.
+
+    Returns:
+        tuple: A tuple containing the training, validation, and test datasets.
     """
     if not os.path.exists(config["oxford_pet_path"]):
         os.makedirs(config["oxford_pet_path"])
@@ -172,7 +206,15 @@ def load_oxford_pet(config, hyperparameter):
 
 def load_breakhis(config, hyperparameter, small=False):
     """
-    Function to download and load BreakHis Dataset
+    Downloads and loads the BreakHis Dataset.
+
+    Args:
+        config (dict): Configuration dictionary containing dataset paths and settings.
+        hyperparameter (dict): Hyperparameters for data augmentation.
+        small (bool, optional): Whether to load a smaller version of the dataset. Defaults to False.
+
+    Returns:
+        tuple: A tuple containing the training, validation, and test datasets.
     """
     if not os.path.exists(config["breakhis_path"]):
         os.makedirs(config["breakhis_path"])
@@ -204,6 +246,16 @@ def load_breakhis(config, hyperparameter, small=False):
     return train_data, val_data, test_data
 
 def load_breast_cancer(config, hyperparameter):
+    """
+    Downloads and loads the Breast Cancer Dataset.
+
+    Args:
+        config (dict): Configuration dictionary containing dataset paths and settings.
+        hyperparameter (dict): Hyperparameters for data augmentation.
+
+    Returns:
+        tuple: A tuple containing the training, validation, and test datasets.
+    """
     if not os.path.exists(config["breast_cancer_path"]):
         os.makedirs(config["breast_cancer_path"])
         path = dataset_download("andrewmvd/breast-cancer-cell-segmentation")
@@ -228,7 +280,17 @@ def load_breast_cancer(config, hyperparameter):
     
 
 def load_multi_cancer(config, hyperparameter, small=False):
+     """
+    Downloads and loads the Multi-Cancer Dataset.
 
+    Args:
+        config (dict): Configuration dictionary containing dataset paths and settings.
+        hyperparameter (dict): Hyperparameters for data augmentation.
+        small (bool, optional): Whether to load a smaller version of the dataset. Defaults to False.
+
+    Returns:
+        tuple: A tuple containing the training, validation, and test datasets.
+    """
     if not os.path.exists(config["multi_cancer_path"]):
         os.makedirs(config["multi_cancer_path"])
         path = dataset_download("obulisainaren/multi-cancer")

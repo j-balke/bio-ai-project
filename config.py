@@ -2,6 +2,16 @@ import json
 import torch
 
 def get_config(model: str, dataset: str) -> dict:
+    """
+    Returns a configuration dictionary containing settings for the model and dataset.
+    
+    Args:
+        model (str): The name of the model (e.g., 'uni', 'resnet', 'vit', 'conch').
+        dataset (str): The name of the dataset (e.g., 'breakhis', 'oxford_pet').
+    
+    Returns:
+        dict: A dictionary with configurations for the model and dataset.
+    """
     config = {
         "dataset": dataset,
         "model": model,
@@ -40,9 +50,21 @@ def get_config(model: str, dataset: str) -> dict:
 
 
 def get_datasets() -> list:
+    """
+    Returns a list of all supported datasets.
+    
+    Returns:
+        list: A list of available datasets.
+    """
     return ["breakhis_small", "breakhis", "multi_cancer_small", "oxford_pet", "multi_cancer", "breast_cancer"]
 
 def get_grid_params() -> dict:
+    """
+    Returns a dictionary with hyperparameters for grid search.
+    
+    Returns:
+        dict: A dictionary with hyperparameters for grid search.
+    """
     grid_param = dict()
     grid_param["lr"] = [1e-5, 1e-4]
     grid_param["layer_dims"] = [[256], [], [512, 64]]

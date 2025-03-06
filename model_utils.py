@@ -11,7 +11,19 @@ import datasets_utils
 import utils
 
 class ClassifierHead(nn.Module):
+    """
+    A custom classifier head that can be added to a base model.
+    """
     def __init__(self, input_dim, num_classes, hidden_layer_dims, dropout=0.1):
+        """
+        Initializes the ClassifierHead.
+
+        Args:
+            input_dim (int): The input dimension of the classifier head.
+            num_classes (int): The number of output classes.
+            hidden_layer_dims (list): A list of dimensions for the hidden layers.
+            dropout (float, optional): The dropout probability. Defaults to 0.1.
+        """
         super(ClassifierHead, self).__init__()
         layers = []
         prev_dim = input_dim
@@ -29,6 +41,9 @@ class ClassifierHead(nn.Module):
         return self.model(x)
     
 class ConchModel(nn.Module):
+    """
+    A custom model class for the CONCH model, combining a base model and a classifier head.
+    """
     def __init__(self, model, head):
         super(ConchModel, self).__init__()
         self.model = model
@@ -41,7 +56,15 @@ class ConchModel(nn.Module):
 
 def load_model(config: dict, hyperparamter: dict, num_classes: int) -> nn.Module:
     """
-    Load model from huggingface hub and add classifier head to it
+    Loads a model from the Hugging Face Hub and adds a classifier head to it.
+
+    Args:
+        config (dict): Configuration dictionary containing model and dataset settings.
+        hyperparameter (dict): Hyperparameters for the model.
+        num_classes (int): The number of output classes.
+
+    Returns:
+        nn.Module: The loaded model with a classifier head.
     """
     login(token=config["token"])
 
@@ -82,8 +105,12 @@ def load_model(config: dict, hyperparamter: dict, num_classes: int) -> nn.Module
 
 def freeze_layers(model, num_unfreezed_layers: int) -> None:
     """
-    freeze all layers of given model except for head and norm layers before head
-    unfreeze last num_unfreezed_layers blocks of the model
+    Freezes all layers of the given model except for the head and norm layers before the head.
+    Unfreezes the last `num_unfreezed_layers` blocks of the model.
+
+    Args:
+        model (nn.Module): The model whose layers are to be frozen/unfrozen.
+        num_unfreezed_layers (int): The number of blocks to unfreeze.
     """
     for name, param in model.named_parameters():
         if name.startswith(tuple(["head", "norm", "fc"])):
@@ -103,6 +130,17 @@ def freeze_layers(model, num_unfreezed_layers: int) -> None:
     return
 
 def evaluate(config, model, dataloader) -> dict:
+    """
+    Evaluates the model on the given dataloader and returns performance metrics.
+
+    Args:
+        config (dict): Configuration dictionary containing model and dataset settings.
+        model (nn.Module): The model to evaluate.
+        dataloader (DataLoader): The dataloader containing the evaluation data.
+
+    Returns:
+        dict: A dictionary containing evaluation metrics (accuracy, F1 score, recall, precision).
+    """
     model.eval()
     y_true, y_pred = [], []
     with torch.no_grad():
@@ -129,7 +167,17 @@ def evaluate(config, model, dataloader) -> dict:
     return {"f1_score": f1_score_, "recall": recall, "precision": precision, "accuracy": accuracy}
 
 def train(config: dict, hyperparameter: dict, save_best: bool) -> dict:
-    
+    """
+    Trains the model using the given configuration and hyperparameters.
+
+    Args:
+        config (dict): Configuration dictionary containing model and dataset settings.
+        hyperparameter (dict): Hyperparameters for training.
+        save_best (bool): Whether to save the best model based on validation performance.
+
+    Returns:
+        dict: A dictionary containing the best evaluation metrics.
+    """
     train_data, val_data, test_data = datasets_utils.get_data_loader(config, hyperparameter)
     model = load_model(config, hyperparameter, num_classes=train_data.dataset.get_num_classes()).to(config["device"])
 
@@ -183,6 +231,16 @@ def train(config: dict, hyperparameter: dict, save_best: bool) -> dict:
 
 
 def grid_search(config: dict, hyperparam_dict: dict):
+    """
+    Performs a grid search over the given hyperparameters to find the best configuration.
+
+    Args:
+        config (dict): Configuration dictionary containing model and dataset settings.
+        hyperparam_dict (dict): A dictionary of hyperparameters to search over.
+
+    Returns:
+        tuple: A tuple containing the best hyperparameters and all scores.
+    """
     hyperparameters = utils.get_combinations(**hyperparam_dict)
     print(f"Amount of configurations: {len(hyperparameters)}")
     best_hyperparameters = None
