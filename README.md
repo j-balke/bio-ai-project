@@ -1,7 +1,14 @@
 # bio-ai-project
 
-# how to use:
-We used python 3.11/3.12 conda environments
+This project focuses on training and explaining biomedical AI models for various datasets. It supports multiple models (`uni`, `vit`, `resnet`, `conch`) and provides tools for model training, evaluation, and explainability using Grad-CAM, attention rollout, and other methods.
+
+
+## Requirements
+- Python 3.11 or 3.12 (Conda environment recommended)
+- Hugging Face token for accessing pre-trained models
+- Dependencies listed in `requirements.txt`
+- External repository: [vit-explain](https://github.com/jacobgil/vit-explain)
+
 
 1. add token.json with "token": "[your hugginggface token]"
 2. install from the requirements.txt
