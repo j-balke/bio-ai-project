@@ -19,10 +19,10 @@ import config
 import pandas as pd
 
 # GRAD_CAM_METHODS = {"grad-cam": GradCAM, "score-cam": ScoreCAM, "eigen-cam": EigenCAM, "eigen-grad-cam": EigenGradCAM, "layer-cam": LayerCAM}
-GRAD_CAM_METHODS = {"grad-cam": GradCAM, "score-cam": ScoreCAM, "eigen-cam": EigenCAM}
-DATASETS = ["breakhis_small", "breakhis", "multi_cancer_small", "oxford_pet", "multi_cancer"]
+GRAD_CAM_METHODS = {"grad-cam": GradCAM, "score-cam": ScoreCAM}
+DATASETS = ["breast_cancer"] # config.get_datasets()
 MODELS = ["uni", "resnet", "vit", "conch"]
-SAVE_PATH = "./assets/explanations/"
+SAVE_PATH = "./assets/explanations"
 COLUMNS=["model", "dataset", "num_unfreeze_layers", "method", "label", "original_img_path", "mask_path", "road_most", "road_least"]
 
 os.makedirs(SAVE_PATH, exist_ok=True)
@@ -102,32 +102,45 @@ def evaluate_road(cam_img, input, targets, model):
 def get_grad_cam_maps(model, samples, config, target_layers):
     data = []
 
+    save = True
     for i, (cam_name, cam_method) in enumerate(GRAD_CAM_METHODS.items()):
         if config["model"] == "resnet":
-            cam = cam_method(model=model, target_layers=target_layers)
+            for i, (input, label, path) in enumerate(samples):
+                with cam_method(model=model, target_layers=target_layers) as cam:
+                    input = input.unsqueeze(0).to(config["device"])
+                    target = [ClassifierOutputTarget(label.item())]
+                    grayscale_cams = cam(input_tensor=input, targets=target)
+                    grayscale_cam = grayscale_cams[0, :]
+
+                    rgb_img = get_image(path, config["img_size"])
+                    cam_image = show_cam_on_image(rgb_img, grayscale_cam)
+
+                    save_path = os.path.join(SAVE_PATH, f"{config['model']}_{config['dataset']}_{config['num_unfreezed_layers']}_{cam_name}_{i}.jpg")
+                    cv2.imwrite(save_path, grayscale_cam)
+                    
+
+                    # evaluate results
+                    road_most, road_least = evaluate_road(grayscale_cams, input, [ClassifierOutputSoftmaxTarget(label.item())], model)
+                    data.append([config["model"], config["dataset"], config["num_unfreezed_layers"], cam_name, label.item(), path, save_path, road_most, road_least])
+
         else:
-            cam = cam_method(model=model, target_layers=target_layers, reshape_transform=reshape_transform)
+            for i, (input, label, path) in enumerate(samples):
+                with cam_method(model=model, target_layers=target_layers, reshape_transform=reshape_transform) as cam:
+                    input = input.unsqueeze(0).to(config["device"])
+                    target = [ClassifierOutputTarget(label.item())]
+                    grayscale_cams = cam(input_tensor=input, targets=target)
+                    grayscale_cam = grayscale_cams[0, :]
 
-        for i, (input, label, path) in enumerate(samples):
+                    rgb_img = get_image(path, config["img_size"])
+                    cam_image = show_cam_on_image(rgb_img, grayscale_cam)
 
-            input = input.unsqueeze(0).to(config["device"])
-            target = [ClassifierOutputTarget(label.item())]
-            grayscale_cams = cam(input_tensor=input, targets=target)
-            grayscale_cam = grayscale_cams[0, :]
+                    save_path = os.path.join(SAVE_PATH, f"{config['model']}_{config['dataset']}_{config['num_unfreezed_layers']}_{cam_name}_{i}.jpg")
+                    cv2.imwrite(save_path, grayscale_cam)
 
-            rgb_img = get_image(path, config["img_size"])
-            cam_image = show_cam_on_image(rgb_img, grayscale_cam)
-            if label.item() == 1:
-                save_path = os.path.join(SAVE_PATH, f"{config['model']}_{config['dataset']}_{config['num_unfreezed_layers']}_{cam_name}_{i}.jpg")
-                cv2.imwrite(save_path, cam_image)
-
-            # evaluate results
-            road_most, road_least = evaluate_road(grayscale_cams, input, [ClassifierOutputSoftmaxTarget(label.item())], model)
-
-
-            data.append([config["model"], config["dataset"], config["num_unfreezed_layers"], cam_name, label.item(), path, save_path, road_most, road_least])
-
-            data.append([config["model"], config["dataset"], config["num_unfreezed_layers"], cam_name, label.item(), path, save_path, road_most, road_least])
+                    # evaluate results
+                    road_most, road_least = evaluate_road(grayscale_cams, input, [ClassifierOutputSoftmaxTarget(label.item())], model)
+                    data.append([config["model"], config["dataset"], config["num_unfreezed_layers"], cam_name, label.item(), path, save_path, road_most, road_least])
+            
 
     return pd.DataFrame(data, columns=COLUMNS)
 
@@ -157,12 +170,8 @@ def get_attention_rollout_maps(method, model, samples, config):
             rgb_img = get_image(path, config["img_size"])
             cam_image = show_cam_on_image(rgb_img, rollout_img)
 
-            if label.item() == 1 and save:
-                save_path = os.path.join(SAVE_PATH, f"{config['model']}_{config['dataset']}_{config['num_unfreezed_layers']}_attention_rollout_{head_fusion}_{i}.jpg")
-                cv2.imwrite(save_path, cam_image)
-                save = False
-            else:
-                save_path = None
+            save_path = os.path.join(SAVE_PATH, f"{config['model']}_{config['dataset']}_{config['num_unfreezed_layers']}_attention_rollout_{head_fusion}_{i}.jpg")
+            cv2.imwrite(save_path, cam_image)
 
             data.append([config["model"], config["dataset"], config["num_unfreezed_layers"], method_name, label.item(), path, save_path, None, None])
 
@@ -208,12 +217,9 @@ def get_raw_attn_maps(model, samples, config):
         rgb_img = get_image(path, config["img_size"])
         cam_image = show_cam_on_image(rgb_img, attn_map)
 
-        if label.item() == 1 and save:
-            save_path = os.path.join(SAVE_PATH, f"{config['model']}_{config['dataset']}_{config['num_unfreezed_layers']}_raw_attn_{i}.jpg")
-            cv2.imwrite(save_path, cam_image)
-            save = False
-        else:
-            save_path = None
+        save_path = os.path.join(SAVE_PATH, f"{config['model']}_{config['dataset']}_{config['num_unfreezed_layers']}_raw_attn_{i}.jpg")
+        cv2.imwrite(save_path, cam_image)
+
 
         data.append([config["model"], config["dataset"], config["num_unfreezed_layers"], "raw_attn", label.item(), path, save_path, None, None])
 
@@ -246,24 +252,22 @@ if __name__ == "__main__":
                 # grad cam
                 target_layers = get_target_layers(CONFIG["model"], model)
                 df_cam = get_grad_cam_maps(model, samples, CONFIG, target_layers)
-                df_explanations = pd.concat([df_explanations, df_cam])
-
+                df_cam.to_csv(f"{SAVE_PATH}/breast_cancer_data_{model_name}_{num_unfreezed_layers}_{dataset}_df_cam.csv", index=False)
                 if model_name != "resnet":
                     
                     # attention rollout
                     df_rollout = get_attention_rollout_maps("attn_rollout", model, samples, CONFIG)
-                    df_explanations = pd.concat([df_explanations, df_rollout])
+                    df_rollout.to_csv(f"{SAVE_PATH}/breast_cancer_data_{model_name}_{num_unfreezed_layers}_{dataset}_df_rollout.csv", index=False)
     
                     # df_grad_rollout = get_attention_rollout_maps("attn_grad_rollout", model, samples, CONFIG)
                     # df_explanations = pd.concat([df_explanations, df_grad_rollout])
     
                     # raw attentions
                     df_raw_attn = get_raw_attn_maps(model, samples, CONFIG)
-                    df_explanations = pd.concat([df_explanations, df_raw_attn])
+                    df_raw_attn.to_csv(f"{SAVE_PATH}/breast_cancer_data_{model_name}_{num_unfreezed_layers}_{dataset}_df_raw_attn.csv", index=False)
 
                 del model
                 torch.cuda.empty_cache()
     
-        df_explanations.to_csv(f"{SAVE_PATH}/data_{model_name}.csv", index=False)
 
 

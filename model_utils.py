@@ -27,38 +27,54 @@ class ClassifierHead(nn.Module):
     
     def forward(self, x):
         return self.model(x)
+    
+class ConchModel(nn.Module):
+    def __init__(self, model, head):
+        super(ConchModel, self).__init__()
+        self.model = model
+        self.head = head
+    
+    def forward(self, x):
+        x = self.model.encode_image(x)
+        x = self.head(x)
+        return x
 
 def load_model(config: dict, hyperparamter: dict, num_classes: int) -> nn.Module:
     """
     Load model from huggingface hub and add classifier head to it
     """
-    # login(token=config["token"])
+    login(token=config["token"])
 
     assert config["model"] in ["uni", "vit", "resnet", "conch"], "Error: Model not supported"
     
     if config["model"] == "uni":
         os.makedirs(config["uni_path"], exist_ok=True)
-        # hf_hub_download("MahmoodLab/UNI", filename="pytorch_model.bin", local_dir=config["uni_path"], force_download=True)
+        hf_hub_download("MahmoodLab/UNI", filename="pytorch_model.bin", local_dir=config["uni_path"])
         model = timm.create_model(
             "vit_large_patch16_224", img_size=224, patch_size=16, init_values=1e-5, num_classes=0, dynamic_img_size=True
         )
         model.load_state_dict(torch.load(f"{config['uni_path']}pytorch_model.bin", map_location="cpu"), strict=True)
         n_features = model.embed_dim
     elif config["model"] == "vit":
-        model = timm.create_model('vit_large_patch16_224.augreg_in21k')
-        model.load_state_dict(torch.load(f"{config['vit_path']}model.pth", map_location="cpu"), strict=True)
+        model = timm.create_model('vit_large_patch16_224.augreg_in21k', pretrained=True)
+        # model.load_state_dict(torch.load(f"{config['vit_path']}model.pth", map_location="cpu"), strict=True)
         n_features = model.embed_dim
     elif config["model"] == "resnet":
-        model = timm.create_model('resnet50.a1_in1k')
-        model.load_state_dict(torch.load(f"{config['resnet_path']}model.pth", map_location="cpu"), strict=True)
+        model = timm.create_model('resnet50.a1_in1k', pretrained=True)
+        # model.load_state_dict(torch.load(f"{config['resnet_path']}model.pth", map_location="cpu"), strict=True)
         n_features = model.num_features
+        
+        head = ClassifierHead(n_features, num_classes, hyperparamter["layer_dims"], hyperparamter["dropout"])
+        model.fc = head
+        return model 
+        
     elif config["model"] == "conch":
         hf_hub_download("MahmoodLab/CONCH", filename="pytorch_model.bin", local_dir=config["conch_path"])
-        model = create_model_from_pretrained('conch_ViT-B-16', config["conch_path"] + "pytorch_model.bin", return_transform=False ) 
-        # model = timm.create_model('conch_ViT-B-16')
-        # model.load_state_dict(torch.load(f"{config['conch_path']}pytorch_model.bin", map_location="cpu"), strict=True)
-        n_features = model.embed_dim
-
+        c_model = create_model_from_pretrained('conch_ViT-B-16', config["conch_path"] + "pytorch_model.bin", return_transform=False) 
+        n_features = c_model.embed_dim
+        head = ClassifierHead(n_features, num_classes, hyperparamter["layer_dims"], hyperparamter["dropout"])
+        model = ConchModel(c_model, head)
+        return model 
     
     head = ClassifierHead(n_features, num_classes, hyperparamter["layer_dims"], hyperparamter["dropout"])
     model.head = head
@@ -70,17 +86,14 @@ def freeze_layers(model, num_unfreezed_layers: int) -> None:
     unfreeze last num_unfreezed_layers blocks of the model
     """
     for name, param in model.named_parameters():
-        if name.startswith(tuple(["head", "norm"])):
+        if name.startswith(tuple(["head", "norm", "fc"])):
             param.requires_grad = True
             continue
 
         param.requires_grad = False
 
     if num_unfreezed_layers == 0:
-        return
-    
-
-    
+        return    
     num_blocks = len(model.blocks)
     for i in range(num_blocks - num_unfreezed_layers, num_blocks):
         block = model.blocks[i]
@@ -120,8 +133,10 @@ def train(config: dict, hyperparameter: dict, save_best: bool) -> dict:
     train_data, val_data, test_data = datasets_utils.get_data_loader(config, hyperparameter)
     model = load_model(config, hyperparameter, num_classes=train_data.dataset.get_num_classes()).to(config["device"])
 
-    # print(f"freeze layers: {config['num_unfreezed_layers']}")
-    freeze_layers(model, config["num_unfreezed_layers"])
+    if config["model"] == "conch":
+        freeze_layers(model.model.visual.trunk, config["num_unfreezed_layers"])
+    else:
+        freeze_layers(model, config["num_unfreezed_layers"])
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=hyperparameter["lr"])
@@ -142,8 +157,6 @@ def train(config: dict, hyperparameter: dict, save_best: bool) -> dict:
         if config["scheduler"]:
             scheduler.step()
         
-        # print(f"Epoch: {epoch}, Loss: {loss.item()}")
-
         evaluation_scores = evaluate(config, model, val_data)
         if evaluation_scores[config["metric"]] > best_f1:
             best_acc = evaluation_scores["accuracy"]
@@ -196,7 +209,7 @@ def train_best_model(config: dict, best_hyperparameters: dict):
 
             
 if __name__ == "__main__":
-    conf = config.get_config("resnet", "breakhis")
+    conf = config.get_config("conch", "breakhis")
     
     model = load_model(conf, {"layer_dims": [256], "dropout": 0.1}, 2)
     print(model)

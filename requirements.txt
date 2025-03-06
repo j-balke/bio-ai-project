@@ -1,0 +1,12 @@
+torch
+torchvision
+numpy
+pandas
+opencv-python
+timm
+huggingface_hub
+scikit-learn
+kagglehub
+tqdm
+pytorch-grad-cam
+git+https://github.com/Mahmoodlab/CONCH.git

@@ -1,4 +1,3 @@
-
 import logging
 import os
 import datetime
@@ -7,9 +6,7 @@ import argparse
 
 import model_utils
 import utils
-# todo argparse einbauen
 
-model = 1
 os.makedirs("logs", exist_ok=True)   
 
 
@@ -36,8 +33,12 @@ def train_model_with_dataset(model: str, dataset: str, GRID_PARAMS: dict, CONFIG
     logging.info(f"SCORES: {scores}")
 
 # either freeze the entire base model, or train the last four layers of the base model
-for num_unfreeze_layers in [0, 4]:
-    for dataset in datasets:
+for dataset in datasets:
+    if model == "resnet":
+        freeze_list = [0]
+    else:
+        freeze_list = [0, 4]
+    for num_unfreeze_layers in freeze_list:
         CONFIG = config.get_config(model, dataset)
         CONFIG["num_unfreezed_layers"] = num_unfreeze_layers
 

@@ -288,7 +288,7 @@ def get_data_loader(config, hyperparameter=None):
     
     return train_loader, val_loader, test_loader
 
-def get_samples(data_loader, num_per_class=5):
+def get_samples(data_loader, num_per_class=30):
     """
     Function to get test samples from the DataLoader for each class
     """
@@ -296,9 +296,14 @@ def get_samples(data_loader, num_per_class=5):
     num_classes = dataset.get_num_classes()
     samples = []
 
+    # for i in range(len(dataset)):
+    #     input, label, path = dataset[i]
+    #     samples.append((input, label, path))
+
     for i in range(num_classes):
         class_samples = []
-        for j, (input, label, path) in enumerate(dataset):
+        for j in range(len(dataset)):
+            input, label, path = dataset[j]
             if label == i:
                 class_samples.append((input, label, path))
                 if len(class_samples) == num_per_class:
@@ -310,7 +315,7 @@ def get_samples(data_loader, num_per_class=5):
 
 
 if __name__ == "__main__":
-    config = get_config("uni", "breast_cancer")
+    config = get_config("uni", "breakhis")
     a,b, c = get_data_loader(config)
 
 
